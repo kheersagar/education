@@ -28,6 +28,24 @@ const userSchema = new Schema({
   profile_img:{
     type:String
   },
+  test_information:[
+      {
+        test_id: String,
+        marks_obtained: Number,
+        wrong_ansuwers:Number,
+        correct_answers:Number,
+        recommend_questions:[
+          {
+            question:String
+          }
+        ],
+        test_date:{
+          type:Date,
+          default : () => new Date()
+        }
+      }
+    ],
+
 });
 userSchema.index({"$**": "text"})
 userSchema.pre('save', function(next) {

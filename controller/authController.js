@@ -2,6 +2,7 @@ const { generateAccessToken, generateRefreshToken } = require("../helpers/genera
 const User = require("../Schema/UserSchema")
 const userSession = require('../Schema/sessions')
 const bcrypt = require('bcrypt')
+
 const register = async (req,res)=>{
   try{
     const result = await User.create(req.body)
