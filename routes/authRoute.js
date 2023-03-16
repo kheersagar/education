@@ -1,9 +1,9 @@
+const { login, register } = require('../controller/authController')
 const { submitTest, getQuestions } = require('../controller/testController')
 
 const router = require('express').Router()
 
-
-router.get("/questions",getQuestions)
-router.post("/submit-test",submitTest)
+router.post("/register",register)
+router.post("/login",login)
 
 module.exports = router
