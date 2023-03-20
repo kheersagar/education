@@ -5,6 +5,11 @@ const bcrypt = require('bcrypt')
 
 const register = async (req,res)=>{
   try{
+    const {username} = req.body
+    const isUserExist = await User.findOne({username})
+    if(isUserExist){
+      return res.status(403).send("User Already Exists")
+    }
     const result = await User.create(req.body)
     res.send('Successfully Registered')
     }catch(err){
