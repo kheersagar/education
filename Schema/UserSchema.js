@@ -29,22 +29,17 @@ const userSchema = new Schema({
     type:String
   },
   test_information:[
-      {
-        test_id: String,
-        marks_obtained: Number,
-        wrong_ansuwers:Number,
-        correct_answers:Number,
-        recommend_questions:[
-          {
-            question:String
-          }
-        ],
-        test_date:{
-          type:Date,
-          default : () => new Date()
-        }
-      }
-    ],
+    {type: Schema.Types.ObjectId,
+    ref:'test'}
+  ],
+  total_score:{
+    type : Number,
+    default: 0
+  },
+  overall_score:{
+    type : Number,
+    default: 0
+  }
 
 });
 userSchema.index({"$**": "text"})

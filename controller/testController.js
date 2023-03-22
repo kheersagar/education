@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { decodeJwt } = require("../helpers/decodeToken");
 const question = require("../Schema/QuestionSchema");
+const Test = require("../Schema/TestSchema");
 const user = require("../Schema/UserSchema");
 
 const getQuestions = async (req,res)=>{
@@ -18,10 +19,11 @@ const submitTest = async (req, res) => {
     const token = req.headers['x-access-token'];
     const {_id:userID} =  decodeJwt(token)
     // console.log(req.body)
-    let marks_obtained = 0, testResult= [],correct_answers = 0 ,wrong_ansuwers=0;
+    let marks_obtained = 0, testResult= [],correct_answers = 0 ,wrong_ansuwers=0,questions_ID = [];
     let recommend = questions.map(async (item, index) => {
       const data = await question.findOne({_id:item.id})
       // calculate user's performance
+      questions_ID.push(item.id)
       testResult.push({
         ...data._doc,
         userAnswer: item.answer,
@@ -47,14 +49,23 @@ const submitTest = async (req, res) => {
     const finalResult = recommend.map((item,index)=>{
       return item[0]
     })
-
-    // update user test records in the db
-    await user.findByIdAndUpdate(userID,{$push : {"test_information":{
+    //  updating test record in test schema
+    const test = await Test.create({
+      user_ID: userID,
       marks_obtained: marks_obtained,
       wrong_ansuwers,
       correct_answers, 
+      questions_ID,
       recommend_questions:finalResult
-    }}})
+    })
+    // update user test records in the db
+    await user.findByIdAndUpdate(userID,{$push:{test_information : test._id}})
+    const userData = await user.findOne({_id: userID})
+    console.log(userData)
+    userData.total_score = (marks_obtained + userData.total_score) 
+    userData.overall_score = userData.total_score / (userData.test_information.length *10)
+    userData.save()
+
     res.send({
       marks_obtained :marks_obtained, 
       testResult: testResult,
@@ -66,4 +77,18 @@ const submitTest = async (req, res) => {
   }
 };
 
-module.exports = { getQuestions,submitTest };
+const getTestInformation = async (req,res) =>{
+  try{
+    const {id} = req.params;
+    const responseData = await Test.findById(id)
+    if(!responseData){
+      return res.status(400).send("Invalid Test ID")
+    }
+    res.send(responseData);
+  }catch(err){
+    console.log(err)
+    res.status(500).send("Internal Server Error")
+  }
+
+}
+module.exports = { getQuestions,submitTest,getTestInformation };
