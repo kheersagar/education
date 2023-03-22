@@ -8,11 +8,12 @@ const userStats = async (req,res)=>{
   
     const userData = await user.findById(userID).populate('test_information');
     const responseData = {
-      last_score : userData.test_information[userData.test_information.length -1].marks_obtained ,
+      last_score : userData.test_information.length > 0  ? userData.test_information[userData.test_information.length -1].marks_obtained : 0,
       overall_score : userData.overall_score * 100
     }
     res.send(responseData)
   }catch(err){
+    console.log(err)
     res.status(500).send('Internal Server Error')
   }
 }
