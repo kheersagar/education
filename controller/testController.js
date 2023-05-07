@@ -54,7 +54,7 @@ const submitTest = async (req, res) => {
     let data = await Promise.all(recommend)
     // formatting the response of model
     const finalResult = data.map((item,index)=>{
-      return {...item.result[0], interval_days: item.interval.interval_score,point: item.interval.point}
+      return {...item.result[0], interval_days: item.interval.interval_score,attempt_date: new Date(new Date().getTime()+(item.interval.interval_score*24*60*60*1000)) ,point: item.interval.point}
     })
     //  updating test record in test schema
     const test = await Test.create({
@@ -108,7 +108,11 @@ const getRecommendedQuestions = async (req,res)=>{
     const result  = await Test.find({user_ID})
     const ques = []
     const recommended_questions = result.map((item,index)=>{
+
       ques.push(...item.recommend_questions)
+    })
+    ques.sort((a,b)=>{
+      return a.attempt_date > b.attempt_date ? 1 : -1
     })
     res.send({recommended_questions: ques})
   }catch(err){

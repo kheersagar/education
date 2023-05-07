@@ -16,6 +16,7 @@ const userSchema = new Schema({
     {
       question: String,
       interval_days: Number,
+      attempt_date: Date,
       point :[]
     },
   ],
