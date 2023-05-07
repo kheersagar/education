@@ -15,6 +15,8 @@ const userSchema = new Schema({
   recommend_questions: [
     {
       question: String,
+      interval_days: Number,
+      point :[]
     },
   ],
   test_date: {

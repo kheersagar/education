@@ -27,7 +27,7 @@ const submitTest = async (req, res) => {
       testResult.push({
         ...data._doc,
         userAnswer: item.answer,
-        status : data.answer == item.answer ? "Correct" : "Wrong"
+        status : data.answer == item.answer ? "right" : "wrong"
       })
       // calculate total marks
       if(data.answer == item.answer){
@@ -41,13 +41,20 @@ const submitTest = async (req, res) => {
         question: data.question,
         n: 1,
       });
-      return result.data
+      const intervalScore = await axios.post("https://repeatation.onrender.com/calculate_score",{
+        level: data.level,
+        is_correct: data.answer == item.answer ? "right" : "wrong",
+        "point": [
+            -1
+        ]
+      })
+      return {result : result.data , interval : intervalScore.data}
     });
     // resolving all promises
-    recommend = await Promise.all(recommend)
+    let data = await Promise.all(recommend)
     // formatting the response of model
-    const finalResult = recommend.map((item,index)=>{
-      return item[0]
+    const finalResult = data.map((item,index)=>{
+      return {...item.result[0], interval_days: item.interval.interval_score,point: item.interval.point}
     })
     //  updating test record in test schema
     const test = await Test.create({
@@ -91,4 +98,22 @@ const getTestInformation = async (req,res) =>{
   }
 
 }
-module.exports = { getQuestions,submitTest,getTestInformation };
+
+const getRecommendedQuestions = async (req,res)=>{
+  try{
+
+    const token = req.headers['x-access-token'];
+    const {_id:user_ID} =  decodeJwt(token)
+  
+    const result  = await Test.find({user_ID})
+    const ques = []
+    const recommended_questions = result.map((item,index)=>{
+      ques.push(...item.recommend_questions)
+    })
+    res.send({recommended_questions: ques})
+  }catch(err){
+  console.log(err)
+  res.status(500).send(err.message)
+}
+}
+module.exports = { getQuestions,submitTest,getTestInformation,getRecommendedQuestions };

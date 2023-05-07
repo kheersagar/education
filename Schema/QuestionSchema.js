@@ -28,9 +28,12 @@ const questionSchema = new Schema({
   shift:{
     type: String,
   },
-  label:{
+  topic:{
     type: String,
   },
+  subtopic:{
+    type :String
+  }
 });
 
 const question = mongoose.model("question", questionSchema);
