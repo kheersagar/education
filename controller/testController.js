@@ -1,8 +1,11 @@
 const axios = require("axios");
+var moment = require('moment'); // require
+
 const { decodeJwt } = require("../helpers/decodeToken");
 const question = require("../Schema/QuestionSchema");
 const Test = require("../Schema/TestSchema");
 const user = require("../Schema/UserSchema");
+const Revision = require("../Schema/RevisionSchema");
 
 const getQuestions = async (req,res)=>{
   try{
@@ -12,6 +15,10 @@ const getQuestions = async (req,res)=>{
     console.log(err)
     res.status(500).send(err.message)
   }
+}
+const getDate = (date) =>{
+  date = new Date(date)
+  return date.getDate()+ '/' + Number(date.getMonth() +1)  + '/'+ date.getFullYear();
 }
 const submitTest = async (req, res) => {
   try {
@@ -57,26 +64,38 @@ const submitTest = async (req, res) => {
       return {...item.result[0], interval_days: item.interval.interval_score,attempt_date: new Date(new Date().getTime()+(item.interval.interval_score*24*60*60*1000)) ,point: item.interval.point}
     })
     //  updating test record in test schema
+    const r = finalResult.map(async (item,index)=>{
+     const qID = await question.findOne({question: item.question}) 
+     const update = await Revision.updateOne({attempt_date : getDate(item.attempt_date)},{ user_ID: userID,
+      $addToSet: {questions_ID : qID._id} // adds only unique elements
+     },{ upsert: true, new: true, setDefaultsOnInsert: true })
+   })
+    await Promise.all(r)
+
     const test = await Test.create({
       user_ID: userID,
       marks_obtained: marks_obtained,
       wrong_ansuwers,
       correct_answers, 
       questions_ID,
-      recommend_questions:finalResult
     })
     // update user test records in the db
     await user.findByIdAndUpdate(userID,{$push:{test_information : test._id}})
-    const userData = await user.findOne({_id: userID})
-    console.log(userData)
+    const userData = await user.findOne({_id: userID}).populate('test_information')
+
+    let count = 0
+    //summation of each test total marks
+    userData.test_information.forEach((item)=>{
+      count+=item.questions_ID.length
+    })
+
     userData.total_score = (marks_obtained + userData.total_score) 
-    userData.overall_score = userData.total_score / (userData.test_information.length *10)
+    userData.overall_score = userData.total_score / count
     userData.save()
 
     res.send({
       marks_obtained :marks_obtained, 
       testResult: testResult,
-      "recommend_questions":finalResult
     });
   } catch (err) {
     console.log(err);
@@ -99,25 +118,20 @@ const getTestInformation = async (req,res) =>{
 
 }
 
-const getRecommendedQuestions = async (req,res)=>{
+const getRevisionTest = async(req,res)=>{
   try{
 
     const token = req.headers['x-access-token'];
     const {_id:user_ID} =  decodeJwt(token)
-  
-    const result  = await Test.find({user_ID})
-    const ques = []
-    const recommended_questions = result.map((item,index)=>{
 
-      ques.push(...item.recommend_questions)
+    const result = await Revision.find({user_ID}).populate('questions_ID')
+    result.sort((a,b)=>{
+     return  moment(a.attempt_date).isAfter(moment(b.attempt_date)) ? 1 : -1
     })
-    ques.sort((a,b)=>{
-      return a.attempt_date > b.attempt_date ? 1 : -1
-    })
-    res.send({recommended_questions: ques})
+    res.send(result)
   }catch(err){
   console.log(err)
   res.status(500).send(err.message)
 }
 }
-module.exports = { getQuestions,submitTest,getTestInformation,getRecommendedQuestions };
+module.exports = { getQuestions,submitTest,getTestInformation,getRevisionTest };

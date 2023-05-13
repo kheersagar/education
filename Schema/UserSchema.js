@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const bcrypt = require('bcrypt')
+const bcrypt = require("bcrypt");
 const userSchema = new Schema({
   username: {
     type: String,
@@ -10,7 +10,7 @@ const userSchema = new Schema({
   password: {
     type: String,
     required: true,
-    minlength:8,
+    minlength: 8,
   },
   first_name: {
     type: String,
@@ -25,42 +25,37 @@ const userSchema = new Schema({
   phone_no: {
     type: Number,
   },
-  profile_img:{
-    type:String
+  profile_img: {
+    type: String,
   },
-  test_information:[
-    {type: Schema.Types.ObjectId,
-    ref:'test'}
-  ],
-  total_score:{
-    type : Number,
-    default: 0
+  test_information: [{ type: Schema.Types.ObjectId, ref: "test" }],
+  total_score: {
+    type: Number,
+    default: 0,
   },
-  overall_score:{
-    type : Number,
-    default: 0
-  }
-
+  overall_score: {
+    type: Number,
+    default: 0,
+  },
 });
-userSchema.index({"$**": "text"})
-userSchema.pre('save', function(next) {
+userSchema.index({ "$**": "text" });
+userSchema.pre("save", function (next) {
   var user = this;
 
   // only hash the password if it has been modified (or is new)
-  if (!user.isModified('password')) return next();
+  if (!user.isModified("password")) return next();
 
   // generate a salt
 
-      // hash the password using our new salt
-      bcrypt.hash(user.password, 10, function(err, hash) {
-          if (err) return next(err);
-          // override the cleartext password with the hashed one
-          user.password = hash;
-          next();
-      });
+  // hash the password using our new salt
+  bcrypt.hash(user.password, 10, function (err, hash) {
+    if (err) return next(err);
+    // override the cleartext password with the hashed one
+    user.password = hash;
+    next();
+  });
 });
 
 const user = mongoose.model("user", userSchema);
-
 
 module.exports = user;

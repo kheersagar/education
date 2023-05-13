@@ -10,16 +10,8 @@ const userSchema = new Schema({
   wrong_ansuwers: Number,
   correct_answers: Number,
   questions_ID:[
-    {type: Schema.Types.ObjectId }
+    {type: Schema.Types.ObjectId, ref:"question" }
    ],
-  recommend_questions: [
-    {
-      question: String,
-      interval_days: Number,
-      attempt_date: Date,
-      point :[]
-    },
-  ],
   test_date: {
     type: Date,
     default: () => new Date(),
